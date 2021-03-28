@@ -5,17 +5,6 @@ on:
       - "prod-[1-9]+.[0-9]+.[0-9]+" # Push events to matching prod-*, i.e.prod-20.15.10
 
 jobs:
-  test:
-    name: Lint & Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 12.x
-      - name: Install Packages
-        run: npm install
-
   deploy_prod:
     name: Deploy To Production
     needs: test
@@ -32,12 +21,11 @@ jobs:
           git fetch --prune --unshallow --tags -f
       - uses: actions/setup-node@v1
         with:
-          node-version: 12.x
+          node-version: 14.x
       - uses: expo/expo-github-action@v5
         with:
-          expo-packager: npm
-          expo-username: ${{ secrets.EXPO_CLI_USERNAME }}
-          expo-password: ${{ secrets.EXPO_CLI_PASSWORD }}
+          expo-version: 4.x
+          expo-token: ${{ secrets.EXPO_TOKEN }}
           expo-cache: true
       - uses: rlespinasse/github-slug-action@v2.x
       - name: Generate Release Channel # Release Channels are named prod-<Major Release>, i.e. prod-1, prod-3
@@ -46,7 +34,7 @@ jobs:
           RELEASE_CHANNEL=$(echo ${{ env.GITHUB_REF_SLUG }} | sed -r 's/\.[0-9]+\.[0-9]+$//')
           echo "::set-output name=releaseChannel::$RELEASE_CHANNEL"
       - name: Install Packages
-        run: npm install
+        run: yarn install
       - name: Get Latest Binary Version # Binary Version will be x.x.x based on the latest tag
         id: latestBinaryVersion
         run: |
@@ -60,6 +48,7 @@ jobs:
           echo Latest release is ${{ steps.latestBinaryVersion.outputs.version }}
       - name: Expo Publish Channel
         run: expo publish --non-interactive --release-channel=${{ steps.releaseChannel.outputs.releaseChannel }}
+
   create_release:
     name: Create Release
     needs: deploy_prod
@@ -82,6 +71,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           name: Release ${{ env.GITHUB_REF_SLUG }}
           allowUpdates: true
+
   build_android:
     needs: [deploy_prod, create_release]
     runs-on: ubuntu-latest
@@ -90,12 +80,11 @@ jobs:
       - uses: rlespinasse/github-slug-action@v2.x
       - uses: expo/expo-github-action@v5
         with:
-          expo-packager: npm
-          expo-username: ${{ secrets.EXPO_CLI_USERNAME }}
-          expo-password: ${{ secrets.EXPO_CLI_PASSWORD }}
+          expo-version: 4.x
+          expo-token: ${{ secrets.EXPO_TOKEN }}
           expo-cache: true
       - name: Install Packages
-        run: npm install
+        run: yarn install
       - name: Build Android Release
         env:
           APP_BUILD_VERSION: ${{ github.run_number }}
@@ -110,11 +99,11 @@ jobs:
           echo The android url is $ASSET_URL
           echo "::set-output name=assetUrl::$ASSET_URL"
       - name: Download APK Asset
-        run: wget -O example-${{ env.GITHUB_REF_SLUG }}.apk ${{ steps.androidUrl.outputs.assetUrl }}
+        run: wget -O systemo-${{ env.GITHUB_REF_SLUG }}.apk ${{ steps.androidUrl.outputs.assetUrl }}
       - name: Upload Release Asset
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./example-${{ env.GITHUB_REF_SLUG }}.apk
-          asset_name: example-${{ env.GITHUB_REF_SLUG }}.apk
+          file: ./systemo-${{ env.GITHUB_REF_SLUG }}.apk
+          asset_name: systemo-${{ env.GITHUB_REF_SLUG }}.apk
           tag: ${{ github.ref }}
