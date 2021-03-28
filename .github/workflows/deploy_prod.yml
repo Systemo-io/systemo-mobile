@@ -1,4 +1,5 @@
 name: Create Release
+
 on:
   push:
     tags:
@@ -7,7 +8,6 @@ on:
 jobs:
   deploy_prod:
     name: Deploy To Production
-    needs: test
     runs-on: ubuntu-latest
     outputs:
       releaseChannel: ${{ steps.releaseChannel.outputs.releaseChannel }}
