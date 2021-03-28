@@ -18,14 +18,14 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.systemo.mobile-app"
+      "bundleIdentifier": "com.systemo.mobile"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.systemo.mobile-app"
+      "package": "com.systemo.mobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
