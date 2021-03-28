@@ -107,3 +107,36 @@ jobs:
           file: ./systemo-${{ env.GITHUB_REF_SLUG }}.apk
           asset_name: systemo-${{ env.GITHUB_REF_SLUG }}.apk
           tag: ${{ github.ref }}
+
+  build_ios:
+    needs: [deploy_prod, create_release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: rlespinasse/github-slug-action@v2.x
+      - uses: expo/expo-github-action@v5
+        with:
+          expo-version: 4.x
+          expo-token: ${{ secrets.EXPO_TOKEN }}
+          expo-cache: true
+      - name: Install Packages
+        run: yarn install
+      - name: Build IOS Release
+        run: |
+          expo build:ios --release-channel=${{ needs.deploy_prod.outputs.releaseChannel }} > buildLogIOS.txt
+          cat buildLogIOS.txt
+      - name: Parse Asset URL
+        id: iosUrl
+        run: |
+          ASSET_URL=$(cat buildLogIOS.txt | tail | egrep -o 'https?://expo\.io/artifacts/[^ ]+')
+          echo The IOS url is $ASSET_URL
+          echo "::set-output name=assetUrl::$ASSET_URL"
+      - name: Download IPA Asset
+        run: wget -O systemo-${{ env.GITHUB_REF_SLUG }}.ipa ${{ steps.iosUrl.outputs.assetUrl }}
+      - name: Upload Release Asset
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ./systemo-${{ env.GITHUB_REF_SLUG }}.ipa
+          asset_name: systemo-${{ env.GITHUB_REF_SLUG }}.ipa
+          tag: ${{ github.ref }}
